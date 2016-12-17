@@ -25,7 +25,7 @@ def load_config(yml)
       'repos' => repos.map {|r| [r, 'https://github.com/' + r]}.to_h
     })
   else
-    raise "invalid protocol: #{protocol}"
+    raise "The protocol is invalid: #{protocol}"
   end
 end
 
@@ -40,7 +40,7 @@ task :mirror do
     repo_dir = cf['dir']
     h_repo = cf['repos']
   else
-    raise "#{CONFIG_YML} not found"
+    raise "#{CONFIG_YML} is not found."
   end
 
   h_repo.keys.map {|k| k.split('/')[0]}.to_set.each do |u|
@@ -66,12 +66,16 @@ end
 
 desc 'generate a template for config.yml'
 file :template do
-  puts "#{PROMPT} generate #{CONFIG_YML}"
-  File.open(CONFIG_YML, 'w') do |f|
-    f.write({
-      'protocol' => 'ssh',
-      'dir' => './repos',
-      'repos' => ['dceoy/repo-cloner']
-    }.to_yaml)
+  if File.exists?(CONFIG_YML)
+    raise "#{CONFIG_YML} already exists."
+  else
+    puts "#{PROMPT} generate #{CONFIG_YML}"
+    File.open(CONFIG_YML, 'w') do |f|
+      f.write({
+        'protocol' => 'ssh',
+        'dir' => './repos',
+        'repos' => ['dceoy/repo-cloner']
+      }.to_yaml)
+    end
   end
 end
