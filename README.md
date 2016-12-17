@@ -1,2 +1,4 @@
-# repo-cloner
-Repository cloner
+repo-cloner
+===========
+
+Cloner of repositories on GitHub
