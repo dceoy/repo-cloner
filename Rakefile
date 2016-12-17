@@ -2,79 +2,62 @@
 # Rakefile for repo-cloner
 
 require 'yaml'
-require 'fileutils'
 
 CONFIG_YML = 'config.yml'
-PROMPT = '>>>'
+
+def console_log(msg)
+  puts ">>> #{msg}"
+end
 
 def load_config(yml)
   y = YAML.load_file(yml)
-  protocol = y['protocol']
-  dir = y['dir']
-  repos = y['repos'].map {|r| r + '.git'}
 
-  case protocol
+  case y['protocol']
   when 'ssh' then
     return({
-      'dir' => dir,
-      'repos' => repos.map {|r| [r, 'git@github.com:' + r]}.to_h
+      'dir' => y['dir'],
+      'repos' => y['repos'].map {|r| ["#{r}.git", "git@github.com:#{r}.git"]}.to_h
     })
   when 'https' then
     return({
-      'dir' => dir,
-      'repos' => repos.map {|r| [r, 'https://github.com/' + r]}.to_h
+      'dir' => y['dir'],
+      'repos' => y['repos'].map {|r| ["#{r}.git", "https://github.com/#{r}.git"]}.to_h
     })
   else
-    raise "The protocol is invalid: #{protocol}"
+    raise "The protocol is invalid: #{y['protocol']}"
   end
 end
-
-
-task :default => :mirror
 
 desc 'mirror repositories on GitHub'
-task :mirror do
-  puts "#{PROMPT} read ./#{CONFIG_YML}"
-  if File.exists?(CONFIG_YML)
-    cf = load_config(CONFIG_YML)
-    repo_dir = cf['dir']
-    h_repo = cf['repos']
-  else
-    raise "#{CONFIG_YML} is not found."
-  end
+task :default => :mirror
 
-  h_repo.keys.map {|k| k.split('/')[0]}.to_set.each do |u|
-    ud = "#{repo_dir}/#{u}"
-    if not Dir.exists?(ud)
-      puts "#{PROMPT} make ./#{ud}/"
-      FileUtils.mkdir_p(ud)
-    end
-  end
+desc 'generate a template for config.yml'
+task :init => CONFIG_YML
 
-  h_repo.each do |k, v|
-    wd = "#{repo_dir}/#{k}"
-    if Dir.exists?(wd)
-      puts "#{PROMPT} fetch updates for #{k}"
-      sh "git --git-dir='#{wd}' fetch --all"
-    else
-      puts "#{PROMPT} clone #{k}"
-      sh "git clone --bare #{v} #{wd}"
-    end
+file CONFIG_YML do
+  console_log "generate #{CONFIG_YML}"
+  File.open(CONFIG_YML, 'w') do |f|
+    f.write({
+      'protocol' => 'ssh',
+      'dir' => './repos',
+      'repos' => ['dceoy/repo-cloner', 'ruby/rake']
+    }.to_yaml)
   end
 end
 
-desc 'generate a template for config.yml'
-file :template do
-  if File.exists?(CONFIG_YML)
-    raise "#{CONFIG_YML} already exists."
-  else
-    puts "#{PROMPT} generate #{CONFIG_YML}"
-    File.open(CONFIG_YML, 'w') do |f|
-      f.write({
-        'protocol' => 'ssh',
-        'dir' => './repos',
-        'repos' => ['dceoy/repo-cloner', 'ruby/rake']
-      }.to_yaml)
+task :mirror => CONFIG_YML do
+  console_log "read ./#{CONFIG_YML}"
+  cf = load_config(CONFIG_YML)
+
+  cf['repos'].each do |k, v|
+    wd = File.join(cf['dir'], k)
+    if Dir.exists?(wd)
+      console_log "fetch updates for #{k}"
+      sh "git --git-dir='#{wd}' fetch --all"
+    else
+      console_log "clone #{k}"
+      mkdir_p wd.sub(/\/[^\/]+$/, '')
+      sh "git clone --bare #{v} #{wd}"
     end
   end
 end
