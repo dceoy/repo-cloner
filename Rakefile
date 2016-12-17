@@ -52,11 +52,10 @@ task :mirror do
   end
 
   h_repo.each do |k, v|
-    puts "#{PROMPT} mirror #{v}"
     wd = "#{repo_dir}/#{k}"
     if Dir.exists?(wd)
       puts "#{PROMPT} fetch updates for #{k}"
-      sh "git --git-dir=\"#{wd}\" fetch --all"
+      sh "git --git-dir='#{wd}' fetch --all"
     else
       puts "#{PROMPT} clone #{k}"
       sh "git clone --bare #{v} #{wd}"
@@ -74,7 +73,7 @@ file :template do
       f.write({
         'protocol' => 'ssh',
         'dir' => './repos',
-        'repos' => ['dceoy/repo-cloner']
+        'repos' => ['dceoy/repo-cloner', 'ruby/rake']
       }.to_yaml)
     end
   end
