@@ -1,6 +1,9 @@
 # coding: utf-8
 # Rakefile for repo-cloner
 
+require 'json'
+require 'net/http'
+require 'uri'
 require 'yaml'
 
 CONFIG_YML = 'config.yml'
@@ -12,16 +15,25 @@ end
 def load_config(yml)
   y = YAML.load_file(yml)
 
+  users = y['repos'].grep(/^[^\/]+$/)
+  user_repos = y['repos'] - users
+  repos = users.map{
+    |u| JSON.parse(
+      Net::HTTP.get(URI.parse("https://api.github.com/users/#{u}/repos"))
+    ).map{|h| "#{u}/#{h['name']}"}
+  }.flatten + user_repos
+  puts "repositories: #{repos}"
+
   case y['protocol']
   when 'ssh' then
     return({
       'dir' => y['dir'],
-      'repos' => y['repos'].map {|r| ["#{r}.git", "git@github.com:#{r}.git"]}.to_h
+      'repos' => repos.map{|r| ["#{r}.git", "git@github.com:#{r}.git"]}.to_h
     })
   when 'https' then
     return({
       'dir' => y['dir'],
-      'repos' => y['repos'].map {|r| ["#{r}.git", "https://github.com/#{r}.git"]}.to_h
+      'repos' => repos.map{|r| ["#{r}.git", "https://github.com/#{r}.git"]}.to_h
     })
   else
     raise "The protocol is invalid: #{y['protocol']}"
