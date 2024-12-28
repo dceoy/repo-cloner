@@ -63,7 +63,7 @@ task :mirror => CONFIG_YML do
 
   cf['repos'].each do |k, v|
     wd = File.join(cf['dir'], k)
-    if Dir.exists?(wd)
+    if Dir.exist?(wd)
       console_log "fetch updates for #{k}"
       sh "git --git-dir='#{wd}' fetch --all"
     else
