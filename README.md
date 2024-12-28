@@ -6,21 +6,7 @@ Bare cloner for repositories on GitHub
 Usage
 -----
 
-1.  Install the required packages.
-
-    ```sh
-    # Ubuntu
-    $ sudo apt-get -y install git rake
-
-    # CentOS
-    $ sudo yum -y install git rake
-
-    # Fedora
-    $ sudo dnf -y install git rake
-
-    # Homebrew on macOS
-    $ brew install git
-    ```
+1.  Install Git and Rake.
 
 2.  Check out `repo-cloner`.
 
